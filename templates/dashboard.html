@@ -1,178 +1,474 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>{{ settings.app_name }} - панель управления</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дашборд — SSH Subsystem Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Здравствуйте, {{ username }}!</h2>
-    <a href="/logout">Выйти</a>
-    <a href="{{ url_for('logs') }}">Журнал подключений</a>
 
-    <h3>Серверы и subsystem</h3>
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>Сервер</th>
-            <th>Адрес</th>
-            <th>Subsystem</th>
-            <th>Локальный порт</th>
-            {% if is_admin %}<th>Действия</th>{% endif %}
-        </tr>
-        {% for row in servers_table %}
-        <tr>
-            <td>{{ row.server_name }}</td>
-            <td>{{ row.host }}:{{ row.port }}</td>
-            <td>{{ row.subsystem }}</td>
-            <td>{{ row.local_port }}</td>
-            {% if is_admin %}
-            <td>
-                <form method="POST" action="{{ url_for('delete_subsystem', sub_id=row.sub_id) }}">
-                    <button type="submit">Удалить subsystem</button>
-                </form>
-                <form method="POST" action="{{ url_for('delete_server', server_id=row.server_id) }}">
-                    <button type="submit">Удалить сервер целиком</button>
-                </form>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </table>
+<header class="topbar">
+  <div class="brand">
+    <svg class="seal" viewBox="0 0 64 64" style="width:38px;height:38px;" aria-hidden="true">
+      <polygon class="seal-outer" points="32,3 58,17.5 58,46.5 32,61 6,46.5 6,17.5" />
+      <polygon class="seal-inner" points="32,9 52,20 52,44 32,55 12,44 12,20" />
+      <circle class="seal-glyph" cx="32" cy="27" r="6.5" />
+      <rect class="seal-glyph" x="28.5" y="31.5" width="7" height="15" rx="2.5" />
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">SSH Subsystem Proxy</span>
+      <span class="brand-tag">Панель управления</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <a href="{{ url_for('logs') }}" class="btn btn-ghost btn-sm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 5h16M4 12h10"/></svg>
+      Журнал
+    </a>
 
     {% if is_admin %}
-    <h3>Настройки приложения</h3>
-    <form method="POST" action="{{ url_for('update_settings') }}">
-        <label>Название:
-            <input type="text" name="app_name" value="{{ settings.app_name }}" required>
-        </label>
-        <label>
-            <input type="checkbox" name="logging_enabled" {% if settings.logging_enabled %}checked{% endif %}>
-            вести логи запросов и ответов
-        </label>
-        <label>Порт Web UI:
-            <input type="number" name="web_ui_port" value="{{ settings.web_ui_port }}" required>
-        </label>
-        <button type="submit">Сохранить настройки</button>
-    </form>
-
     <form method="POST" action="{{ url_for('reload_bridges') }}">
-        <button type="submit">Перезапустить мосты из БД</button>
-    </form>
-
-    <h3>Добавить subsystem</h3>
-    <form method="POST" action="{{ url_for('add_subsystem') }}">
-        <select name="server_id" required>
-            {% for s in servers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
-        </select>
-        <input type="text" name="name" placeholder="имя subsystem" required>
-        <input type="number" name="local_port" placeholder="локальный порт" required>
-        <button type="submit">Добавить</button>
-    </form>
-
-    <h3>Добавить SSH-сервер</h3>
-    <form method="POST" action="{{ url_for('add_server') }}">
-        <input type="text" name="name" placeholder="имя сервера" required>
-        <input type="text" name="host" placeholder="IP-адрес или hostname" required>
-        <input type="number" name="port" value="22" required>
-        <input type="text" name="proxy_username" placeholder="логин по умолчанию" required>
-        <input type="password" name="proxy_password" placeholder="пароль по умолчанию">
-        <button type="submit">Добавить</button>
-    </form>
-
-    <h3>Группы</h3>
-    {% for g in groups %}<li>{{ g.name }}</li>{% endfor %}
-    <form method="POST" action="{{ url_for('add_group') }}">
-        <input type="text" name="name" placeholder="имя группы" required>
-        <button type="submit">Добавить группу</button>
-    </form>
-
-    <h3>Пользователи</h3>
-    {% for u in users %}
-    <li>{{ u.username }} ({{ u.group.name }})
-        {% if u.expires_at %}, действует до {{ u.expires_at }}{% endif %}
-        <form method="POST" action="{{ url_for('delete_user', user_id=u.id) }}" style="display:inline">
-            <button type="submit">Удалить</button>
-        </form>
-    </li>
-    {% endfor %}
-    <form method="POST" action="{{ url_for('add_user') }}">
-        <input type="text" name="username" placeholder="логин" required>
-        <input type="password" name="password" placeholder="пароль">
-        <select name="group_id" required>
-            {% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}
-        </select>
-        <input type="datetime-local" name="expires_at">
-        <button type="submit">Добавить пользователя</button>
-    </form>
-
-    <h3>IP-адреса и SSH-учётки</h3>
-    {% for ip in client_ips %}
-    <li>
-        {{ ip.ip_address }} -> {{ ip.user.username }};
-        SSH: {{ ip.ssh_username or "учётка сервера по умолчанию" }};
-        ключ: {{ ip.ssh_key_path or "нет" }}
-        <form method="POST" action="{{ url_for('delete_client_ip', ip_id=ip.id) }}" style="display:inline">
-            <button type="submit">Удалить</button>
-        </form>
-    </li>
-    {% endfor %}
-    <form method="POST" action="{{ url_for('add_client_ip') }}">
-        <input type="text" name="ip_address" placeholder="IP" required>
-        <select name="user_id" required>
-            {% for u in users %}<option value="{{ u.id }}">{{ u.username }}</option>{% endfor %}
-        </select>
-        <input type="text" name="ssh_username" placeholder="SSH-логин для этого IP">
-        <input type="password" name="ssh_password" placeholder="SSH-пароль или passphrase">
-        <input type="text" name="ssh_key_path" placeholder="путь к приватному ключу">
-        <button type="submit">Добавить IP</button>
-    </form>
-
-    <h3>Правила доступа</h3>
-    {% for r in access_rules %}
-    <li>{{ r.client_ip.ip_address }} -> {{ r.server.name }}
-        <form method="POST" action="{{ url_for('delete_access_rule', rule_id=r.id) }}" style="display:inline">
-            <button type="submit">Удалить</button>
-        </form>
-    </li>
-    {% endfor %}
-    <form method="POST" action="{{ url_for('add_access_rule') }}">
-        <select name="client_ip_id" required>
-            {% for ip in client_ips %}<option value="{{ ip.id }}">{{ ip.ip_address }}</option>{% endfor %}
-        </select>
-        <select name="server_id" required>
-            {% for s in servers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
-        </select>
-        <button type="submit">Добавить правило</button>
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.3 6.4L3 16M3 21v-5h5"/></svg>
+        Reload
+      </button>
     </form>
     {% endif %}
 
-    <h3>Активные сессии</h3>
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>ID</th>
-            <th>Порт</th>
-            <th>Клиент IP</th>
-            <th>SSH-пользователь</th>
-            <th>SSH-сервер</th>
-            <th>Subsystem</th>
-            {% if is_admin %}<th>Действия</th>{% endif %}
-        </tr>
-        {% for session_id, port, ip, ssh_username, server_name, subsystem in sessions %}
-        <tr>
-            <td>{{ session_id }}</td>
-            <td>{{ port }}</td>
-            <td>{{ ip }}</td>
-            <td>{{ ssh_username }}</td>
-            <td>{{ server_name }}</td>
-            <td>{{ subsystem }}</td>
-            {% if is_admin %}
-            <td>
+    <div class="user-chip">
+      <span class="user-avatar">{{ username[0]|upper }}</span>
+      {{ username }}
+      {% if is_admin %}<span class="badge badge-admin">admin</span>{% else %}<span class="badge badge-muted">operator</span>{% endif %}
+    </div>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="side-nav">
+    <span class="nav-label">Мосты</span>
+    <a href="#servers">Серверы и subsystem</a>
+    <a href="#sessions">Активные сессии</a>
+    <span class="nav-label">Доступ</span>
+    <a href="#users">Пользователи</a>
+    <a href="#groups">Группы</a>
+    <a href="#ips">IP-адреса</a>
+    <a href="#rules">Правила доступа</a>
+    {% if is_admin %}
+    <span class="nav-label">Система</span>
+    <a href="#settings">Настройки</a>
+    {% endif %}
+  </nav>
+
+  <main class="main-content">
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-num">{{ servers|length }}</span>
+        <span class="stat-label">SSH-серверов</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">{{ servers_table|length }}</span>
+        <span class="stat-label">Subsystem</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">{{ sessions|length }}</span>
+        <span class="stat-label">Активных сессий</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">{{ users|length }}</span>
+        <span class="stat-label">Пользователей</span>
+      </div>
+    </div>
+
+    <!-- ================= СЕРВЕРЫ И SUBSYSTEM ================= -->
+    <section id="servers" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Мосты</span>
+          <h2>Серверы и subsystem</h2>
+        </div>
+        <span class="panel-count">{{ servers_table|length }} строк</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Сервер</th><th>Адрес</th><th>Subsystem</th><th>Локальный порт</th>
+              {% if is_admin %}<th></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in servers_table %}
+            <tr>
+              <td>{{ row.server_name }}</td>
+              <td class="mono">{{ row.host }}:{{ row.port }}</td>
+              <td>{{ row.subsystem }}</td>
+              <td class="mono">{{ row.local_port }}</td>
+              {% if is_admin %}
+              <td>
+                <div class="cell-actions">
+                  <form method="POST" action="{{ url_for('delete_subsystem', sub_id=row.sub_id) }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Удалить subsystem</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('delete_server', server_id=row.server_id) }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Удалить сервер</button>
+                  </form>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="5">Серверы ещё не добавлены</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_admin %}
+      <details class="add-form">
+        <summary>Добавить subsystem</summary>
+        <form method="POST" action="{{ url_for('add_subsystem') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field">
+              <label>Сервер</label>
+              <select name="server_id" required>
+                {% for s in servers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label>Имя subsystem</label>
+              <input type="text" name="name" placeholder="echo, db, rest…" required>
+            </div>
+            <div class="field">
+              <label>Локальный порт</label>
+              <input type="number" name="local_port" placeholder="15003" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+
+      <details class="add-form">
+        <summary>Добавить SSH-сервер</summary>
+        <form method="POST" action="{{ url_for('add_server') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field"><label>Имя сервера</label><input type="text" name="name" placeholder="T14" required></div>
+            <div class="field"><label>IP-адрес</label><input type="text" name="host" placeholder="10.87.151.206" required></div>
+            <div class="field" style="max-width: 90px;"><label>Порт</label><input type="number" name="port" value="22" required></div>
+            <div class="field"><label>Логин прокси</label><input type="text" name="proxy_username" placeholder="логин" required></div>
+            <div class="field"><label>Пароль прокси</label><input type="password" name="proxy_password" placeholder="пароль" required></div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ================= АКТИВНЫЕ СЕССИИ ================= -->
+    <section id="sessions" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">В реальном времени</span>
+          <h2>Активные сессии</h2>
+        </div>
+        <span class="panel-count">{{ sessions|length }} онлайн</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>ID</th><th>Порт</th><th>Клиент IP</th><th>SSH-пользователь</th><th>Сервер</th><th>Subsystem</th>
+              {% if is_admin %}<th></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for session_id, port, ip, ssh_username, server_name, subsystem in sessions %}
+            <tr>
+              <td class="mono">#{{ session_id }}</td>
+              <td class="mono">{{ port }}</td>
+              <td class="mono">{{ ip }}</td>
+              <td class="mono">{{ ssh_username }}</td>
+              <td>{{ server_name }}</td>
+              <td>{{ subsystem }} <span class="badge badge-success badge-live" style="margin-left: 6px;">live</span></td>
+              {% if is_admin %}
+              <td>
                 <form method="POST" action="{{ url_for('disconnect', session_id=session_id) }}">
-                    <button type="submit">Отключить</button>
+                  <button type="submit" class="btn btn-danger btn-sm">Отключить</button>
                 </form>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </table>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="7">Сейчас никто не подключён</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= ПОЛЬЗОВАТЕЛИ ================= -->
+    <section id="users" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Доступ</span>
+          <h2>Пользователи</h2>
+        </div>
+        <span class="panel-count">{{ users|length }}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Логин</th><th>Группа</th><th>Срок действия</th><th>Статус</th>{% if is_admin %}<th></th>{% endif %}</tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ u.username }}</td>
+              <td><span class="badge {{ 'badge-admin' if u.group.name == 'admin' else 'badge-muted' }}">{{ u.group.name }}</span></td>
+              <td class="mono">{{ u.expires_at.strftime('%d.%m.%Y %H:%M') if u.expires_at else 'бессрочно' }}</td>
+              <td>
+                {% if u.is_expired() %}<span class="badge badge-warning">истекла</span>
+                {% else %}<span class="badge badge-success">активна</span>{% endif %}
+              </td>
+              {% if is_admin %}
+              <td>
+                <form method="POST" action="{{ url_for('delete_user', user_id=u.id) }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                </form>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="5">Пользователей нет</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_admin %}
+      <details class="add-form">
+        <summary>Добавить пользователя</summary>
+        <form method="POST" action="{{ url_for('add_user') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field"><label>Логин</label><input type="text" name="username" placeholder="логин" required></div>
+            <div class="field"><label>Пароль (необязательно)</label><input type="password" name="password" placeholder="оставьте пустым для входа без пароля"></div>
+            <div class="field">
+              <label>Группа</label>
+              <select name="group_id" required>
+                {% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field"><label>Действует до (необязательно)</label><input type="datetime-local" name="expires_at"></div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ================= ГРУППЫ ================= -->
+    <section id="groups" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Доступ</span>
+          <h2>Группы</h2>
+        </div>
+        <span class="panel-count">{{ groups|length }}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Название группы</th></tr></thead>
+          <tbody>
+            {% for g in groups %}
+            <tr><td><span class="badge {{ 'badge-admin' if g.name == 'admin' else 'badge-muted' }}">{{ g.name }}</span></td></tr>
+            {% else %}
+            <tr class="empty-row"><td>Группы не заведены</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_admin %}
+      <details class="add-form">
+        <summary>Добавить группу</summary>
+        <form method="POST" action="{{ url_for('add_group') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field"><label>Имя группы</label><input type="text" name="name" placeholder="operator" required></div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ================= IP-АДРЕСА ================= -->
+    <section id="ips" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Доступ</span>
+          <h2>IP-адреса клиентов</h2>
+        </div>
+        <span class="panel-count">{{ client_ips|length }}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>IP</th><th>Пользователь прокси</th><th>SSH-логин</th><th>Способ входа на SSH</th>{% if is_admin %}<th></th>{% endif %}</tr>
+          </thead>
+          <tbody>
+            {% for ip in client_ips %}
+            <tr>
+              <td class="mono">{{ ip.ip_address }}</td>
+              <td>{{ ip.user.username }}</td>
+              <td class="mono">{{ ip.ssh_username or '— (из сервера)' }}</td>
+              <td>
+                {% if ip.ssh_key_path %}<span class="badge badge-success">ключ</span>
+                {% elif ip.ssh_password %}<span class="badge badge-muted">пароль</span>
+                {% else %}<span class="badge badge-muted">по умолчанию</span>{% endif %}
+              </td>
+              {% if is_admin %}
+              <td>
+                <form method="POST" action="{{ url_for('delete_client_ip', ip_id=ip.id) }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                </form>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="5">IP-адреса не добавлены</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_admin %}
+      <details class="add-form">
+        <summary>Добавить IP-адрес</summary>
+        <form method="POST" action="{{ url_for('add_client_ip') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field"><label>IP-адрес</label><input type="text" name="ip_address" placeholder="127.0.0.1" required></div>
+            <div class="field">
+              <label>Пользователь прокси</label>
+              <select name="user_id" required>
+                {% for u in users %}<option value="{{ u.id }}">{{ u.username }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>SSH-логин (необязательно)</label><input type="text" name="ssh_username" placeholder="если отличается от сервера"></div>
+            <div class="field"><label>SSH-пароль / пассфраза</label><input type="password" name="ssh_password" placeholder="необязательно"></div>
+            <div class="field"><label>Путь к SSH-ключу</label><input type="text" name="ssh_key_path" placeholder="/home/user/.ssh/id_ed25519"></div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ================= ПРАВИЛА ДОСТУПА ================= -->
+    <section id="rules" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Доступ</span>
+          <h2>Правила доступа</h2>
+        </div>
+        <span class="panel-count">{{ access_rules|length }}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>IP-адрес</th><th>Разрешён сервер</th>{% if is_admin %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+            {% for r in access_rules %}
+            <tr>
+              <td class="mono">{{ r.client_ip.ip_address }}</td>
+              <td>{{ r.server.name }}</td>
+              {% if is_admin %}
+              <td>
+                <form method="POST" action="{{ url_for('delete_access_rule', rule_id=r.id) }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                </form>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="3">Правил пока нет — без них ни один IP не пройдёт проверку доступа</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_admin %}
+      <details class="add-form">
+        <summary>Добавить правило</summary>
+        <form method="POST" action="{{ url_for('add_access_rule') }}" class="add-form-body">
+          <div class="field-row">
+            <div class="field">
+              <label>IP-адрес</label>
+              <select name="client_ip_id" required>
+                {% for ip in client_ips %}<option value="{{ ip.id }}">{{ ip.ip_address }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label>Сервер</label>
+              <select name="server_id" required>
+                {% for s in servers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ================= НАСТРОЙКИ ================= -->
+    {% if is_admin %}
+    <section id="settings" class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-eyebrow">Система</span>
+          <h2>Настройки приложения</h2>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('update_settings') }}">
+        <div class="field-row">
+          <div class="field">
+            <label>Название приложения</label>
+            <input type="text" name="app_name" value="{{ settings.app_name }}">
+          </div>
+          <div class="field" style="max-width: 140px;">
+            <label>Порт Web UI</label>
+            <input type="number" name="web_ui_port" value="{{ settings.web_ui_port }}">
+          </div>
+          <div class="field">
+            <label>Логирование</label>
+            <div class="checkbox-line" style="height: 42px;">
+              <input type="checkbox" id="logging_enabled" name="logging_enabled" {% if settings.logging_enabled %}checked{% endif %}>
+              <label for="logging_enabled">включено (метаданные + сырой трафик)</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </section>
+    {% endif %}
+
+  </main>
+</div>
+
 </body>
 </html>

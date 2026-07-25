@@ -1,34 +1,93 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Журнал подключений — SSH Subsystem Proxy</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Журнал подключений — SSH Subsystem Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Журнал подключений</h2>
-    <a href="{{ url_for('dashboard') }}">Назад на дашборд</a>
 
-    <table border="1" cellpadding="5">
-        <tr>
+<header class="topbar">
+  <div class="brand">
+    <svg class="seal" viewBox="0 0 64 64" style="width:38px;height:38px;" aria-hidden="true">
+      <polygon class="seal-outer" points="32,3 58,17.5 58,46.5 32,61 6,46.5 6,17.5" />
+      <polygon class="seal-inner" points="32,9 52,20 52,44 32,55 12,44 12,20" />
+      <circle class="seal-glyph" cx="32" cy="27" r="6.5" />
+      <rect class="seal-glyph" x="28.5" y="31.5" width="7" height="15" rx="2.5" />
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">Журнал подключений</span>
+      <span class="brand-tag">Последние 200 записей</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      К дашборду
+    </a>
+    <div class="user-chip">
+      <span class="user-avatar">{{ username[0]|upper }}</span>
+      {{ username }}
+    </div>
+  </div>
+</header>
+
+<main class="main-content" style="max-width: 1200px; margin: 0 auto;">
+
+  <div class="logs-toolbar">
+    <div>
+      <span class="panel-eyebrow">Реестр</span>
+      <h2 style="font-size: 20px;">Кто и когда подключался</h2>
+    </div>
+    <span class="panel-count">{{ entries|length }} запис{{ 'ей' if entries|length != 1 else 'ь' }}</span>
+  </div>
+
+  <div class="panel" style="padding: 8px 0 0;">
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
             <th>ID</th>
             <th>Клиент IP</th>
-            <th>Сервер</th>
+            <th>SSH-сервер</th>
             <th>Subsystem</th>
             <th>Порт</th>
             <th>Подключение</th>
             <th>Отключение</th>
-        </tr>
-        {% for e in entries %}
-        <tr>
-            <td>{{ e.id }}</td>
-            <td>{{ e.client_ip }}</td>
-            <td>{{ e.server_name }}</td>
-            <td>{{ e.subsystem_name }}</td>
-            <td>{{ e.local_port }}</td>
-            <td>{{ e.connected_at }}</td>
-            <td>{{ e.disconnected_at or "ещё активна" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr>
+            <td class="mono">#{{ entry.id }}</td>
+            <td class="mono">{{ entry.client_ip }}</td>
+            <td>{{ entry.server_name }}</td>
+            <td>{{ entry.subsystem_name }}</td>
+            <td class="mono">{{ entry.local_port }}</td>
+            <td class="mono">{{ entry.connected_at.strftime('%d.%m.%Y %H:%M:%S') if entry.connected_at else '—' }}</td>
+            <td class="mono">{{ entry.disconnected_at.strftime('%d.%m.%Y %H:%M:%S') if entry.disconnected_at else '—' }}</td>
+            <td>
+              {% if entry.disconnected_at %}
+                <span class="badge badge-muted">Завершено</span>
+              {% else %}
+                <span class="badge badge-success badge-live">Активно</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="8">Записей пока нет — журнал заполнится после первых подключений</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
 </body>
 </html>

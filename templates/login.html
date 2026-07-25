@@ -1,18 +1,58 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Вход — SSH Subsystem Proxy</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход — SSH Subsystem Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Вход в панель управления</h2>
+
+<div class="auth-shell">
+  <div class="auth-card">
+
+    <div class="auth-head">
+      <svg class="seal" viewBox="0 0 64 64" aria-hidden="true">
+        <polygon class="seal-outer" points="32,3 58,17.5 58,46.5 32,61 6,46.5 6,17.5" />
+        <polygon class="seal-inner" points="32,9 52,20 52,44 32,55 12,44 12,20" />
+        <circle class="seal-glyph" cx="32" cy="27" r="6.5" />
+        <rect class="seal-glyph" x="28.5" y="31.5" width="7" height="15" rx="2.5" />
+      </svg>
+      <div>
+        <span class="brand-name">SSH Subsystem Proxy</span>
+        <span class="brand-tag" style="margin-top:6px;">Панель управления доступом</span>
+      </div>
+    </div>
+
     {% if error %}
-        <p style="color: red;">{{ error }}</p>
+    <div class="error-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>{{ error }}</span>
+    </div>
     {% endif %}
+
     <form method="POST">
-        <label>Логин: <input type="text" name="username"></label><br><br>
-        <label>Пароль: <input type="password" name="password"></label><br><br>
-        <button type="submit">Войти</button>
+      <div class="field">
+        <label for="username">Логин</label>
+        <input type="text" id="username" name="username" placeholder="ваш логин" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" name="password" placeholder="оставьте пустым, если пароль не задан" autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 6px; padding: 11px 16px; font-size: 14px;">
+        Войти
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
     </form>
+
+    <div class="auth-foot">Доступ только для зарегистрированных учётных записей прокси</div>
+  </div>
+</div>
+
 </body>
 </html>

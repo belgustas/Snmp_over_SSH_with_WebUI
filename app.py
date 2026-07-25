@@ -3,7 +3,7 @@ from flask import Flask, request, session, redirect, url_for, render_template, a
 from models import (
     Session as DbSession, SSHServer, Subsystem,
     Group, User, ClientIP, ServerAccessRule, RequestLog, AppSettings,
-)
+)   
 from auth_utils import check_password, hash_password
 from bridge_manager import BridgeManager
 from datetime import datetime
@@ -45,7 +45,7 @@ def login():
             session["role"] = user.group.name  # НОВОЕ: "admin" или "operator"
             return redirect(url_for("dashboard"))
         else:
-            return render_template("login.html", error="Неверный логин, пароль или истёкшая учётка")
+            return render_template("login.html", error="Неверный логин, пароль или истекшая учетная запись")
         db.close()
     return render_template("login.html", error=None)
 

@@ -1,9 +1,39 @@
 <!DOCTYPE html>
-<html>
-<head><title>Доступ запрещён</title></head>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Доступ запрещён — SSH Subsystem Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 <body>
-  <h1>403 — доступ запрещён</h1>
-  <p>У вашей учётной записи ({{ username }}) нет прав администратора для этого действия.</p>
-  <a href="{{ url_for('dashboard') }}">Вернуться на дашборд</a>
+
+<div class="error-shell">
+  <div class="error-card">
+    <svg class="seal" viewBox="0 0 64 64" style="margin: 0 auto 18px;" aria-hidden="true">
+      <polygon class="seal-outer" points="32,3 58,17.5 58,46.5 32,61 6,46.5 6,17.5" />
+      <polygon class="seal-inner" points="32,9 52,20 52,44 32,55 12,44 12,20" />
+      <line x1="24" y1="24" x2="40" y2="40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <line x1="40" y1="24" x2="24" y2="40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+
+    <div class="error-code">403</div>
+    <h1>Действие доступно только администратору</h1>
+    <p>
+      Учётная запись <strong style="color: var(--text);">{{ username }}</strong> вошла в систему,
+      но не входит в группу <span class="mono">admin</span> — изменение данных прокси ей недоступно.
+      Если это ошибка, обратитесь к администратору проекта.
+    </p>
+
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Вернуться на дашборд
+    </a>
+  </div>
+</div>
+
 </body>
 </html>
