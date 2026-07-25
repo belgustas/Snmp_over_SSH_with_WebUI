@@ -96,7 +96,7 @@
     {% endfor %}
     <form method="POST" action="{{ url_for('add_user') }}">
         <input type="text" name="username" placeholder="логин" required>
-        <input type="password" name="password" placeholder="пароль" required>
+        <input type="password" name="password" placeholder="пароль">
         <select name="group_id" required>
             {% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}
         </select>

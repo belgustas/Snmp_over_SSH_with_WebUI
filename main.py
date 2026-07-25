@@ -16,15 +16,14 @@ def main():
             sessions = manager.list_sessions()
             if not sessions:
                 print("Активных сессий нет.")
-            for session_id, port, ip, subsystem in sessions:
-                print(f"  #{session_id}  порт {port}  {ip} -> {subsystem}")
+            for session_id, port, ip, ssh_username, server_name, subsystem in sessions:
+                print(f"  #{session_id}  порт {port}  {ip} as {ssh_username} -> {server_name}:{subsystem}")
         elif cmd.startswith("kill "):
             session_id = int(cmd.split()[1])
             ok = manager.disconnect_session(session_id)
             print("Сессия отключена." if ok else "Такой сессии нет.")
         else:
             print("Неизвестная команда.")
-
 
 
 if __name__ == "__main__":
