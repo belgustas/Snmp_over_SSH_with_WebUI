@@ -1,0 +1,479 @@
+/* =========================================================
+   SSH SUBSYSTEM PROXY — design system
+   Палитра: чёрно-бордовая, "служебный журнал / сургучная печать"
+   ========================================================= */
+
+:root {
+  /* --- палитра --- */
+  --bg:            #0b0708;
+  --bg-elevated:   #16100f;
+  --bg-elevated-2: #1f1414;
+  --border:        #35191d;
+  --border-soft:   #241417;
+
+  --burgundy:        #7a1b2e;
+  --burgundy-bright: #b7344d;
+  --burgundy-deep:   #4d1220;
+  --burgundy-glow:   rgba(183, 52, 77, 0.28);
+
+  --text:        #f3e9e8;
+  --text-muted:  #b39a9c;
+  --text-faint:  #79595d;
+
+  --success:      #4f9169;
+  --success-bg:   rgba(79, 145, 105, 0.14);
+  --warning:      #c9903f;
+  --warning-bg:   rgba(201, 144, 63, 0.14);
+  --danger-bg:    rgba(183, 52, 77, 0.14);
+
+  /* --- типографика --- */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body:    "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(122, 27, 46, 0.16), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(122, 27, 46, 0.10), transparent 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+::selection { background: var(--burgundy); color: #fff; }
+
+a { color: var(--burgundy-bright); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; color: var(--text); }
+
+:focus-visible {
+  outline: 2px solid var(--burgundy-bright);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* =========================================================
+   Печать / логотип (общий сигнатурный элемент)
+   ========================================================= */
+
+.seal {
+  width: 56px;
+  height: 56px;
+  color: var(--burgundy-bright);
+  filter: drop-shadow(0 0 14px var(--burgundy-glow));
+  flex-shrink: 0;
+}
+.seal .seal-outer   { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.seal .seal-inner   { fill: none; stroke: currentColor; stroke-width: 0.8; stroke-dasharray: 2 3; opacity: 0.7; }
+.seal .seal-glyph   { fill: currentColor; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand-text .brand-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  display: block;
+}
+.brand-text .brand-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: block;
+  margin-top: 2px;
+}
+
+/* =========================================================
+   Кнопки
+   ========================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+.btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--burgundy);
+  color: #fbf1f1;
+  border-color: var(--burgundy);
+}
+.btn-primary:hover { background: var(--burgundy-bright); border-color: var(--burgundy-bright); box-shadow: 0 0 0 4px var(--burgundy-glow); text-decoration: none; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--burgundy-bright); text-decoration: none; }
+
+.btn-danger {
+  background: transparent;
+  color: var(--burgundy-bright);
+  border-color: var(--burgundy-deep);
+}
+.btn-danger:hover { background: var(--burgundy); color: #fff; border-color: var(--burgundy); text-decoration: none; }
+
+.btn-sm { padding: 6px 11px; font-size: 12.5px; }
+.btn-block { width: 100%; justify-content: center; }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* =========================================================
+   Формы
+   ========================================================= */
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.field-row .field { flex: 1 1 160px; margin-bottom: 0; }
+
+label, .field-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+input[type="text"], input[type="password"], input[type="number"],
+input[type="datetime-local"], select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input::placeholder { color: var(--text-faint); }
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--burgundy-bright);
+  box-shadow: 0 0 0 3px var(--burgundy-glow);
+}
+
+.checkbox-line { display: flex; align-items: center; gap: 9px; }
+.checkbox-line label { text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--text-muted); }
+input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--burgundy-bright); }
+
+/* =========================================================
+   Карточки / панели
+   ========================================================= */
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.panel-head h2 { font-size: 17px; }
+.panel-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: block;
+  margin-bottom: 4px;
+}
+.panel-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* Раскрывающаяся форма добавления (details/summary) */
+.add-form { margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px; }
+.add-form summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--burgundy-bright);
+  padding: 4px 0;
+}
+.add-form summary::-webkit-details-marker { display: none; }
+.add-form summary::before {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border: 1px solid var(--burgundy-deep);
+  border-radius: 4px;
+  font-size: 13px;
+  transition: transform 0.15s ease;
+}
+.add-form[open] summary::before { content: "–"; }
+.add-form-body { padding-top: 16px; }
+
+/* =========================================================
+   Таблицы
+   ========================================================= */
+
+.table-wrap { overflow-x: auto; border-radius: var(--radius-md); }
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+table.data thead th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 14px 10px;
+  border-bottom: 2px solid var(--burgundy-deep);
+  white-space: nowrap;
+}
+table.data tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+  vertical-align: middle;
+}
+table.data tbody tr:hover { background: var(--bg-elevated-2); }
+table.data tbody tr:last-child td { border-bottom: none; }
+.mono { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+.cell-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.empty-row td { text-align: center; color: var(--text-faint); padding: 26px; font-style: italic; }
+
+/* =========================================================
+   Бейджи / статусы
+   ========================================================= */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 100px;
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-muted   { background: rgba(255,255,255,0.05); color: var(--text-faint); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-admin   { background: var(--danger-bg); color: var(--burgundy-bright); }
+.badge-live::before { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* =========================================================
+   Каркас страницы дашборда
+   ========================================================= */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 28px;
+  background: rgba(11, 7, 8, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-soft);
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 13px;
+}
+.user-avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--burgundy);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shell { display: flex; max-width: 1360px; margin: 0 auto; align-items: flex-start; }
+.side-nav {
+  position: sticky;
+  top: 68px;
+  width: 230px;
+  flex-shrink: 0;
+  padding: 28px 12px 28px 28px;
+}
+.side-nav a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  border-left: 2px solid transparent;
+}
+.side-nav a:hover { color: var(--text); text-decoration: none; background: var(--bg-elevated); }
+.side-nav .nav-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 18px 12px 6px;
+}
+.side-nav .nav-label:first-child { padding-top: 4px; }
+
+.main-content { flex: 1; min-width: 0; padding: 28px 28px 60px; }
+
+/* Чтобы якорные ссылки боковой навигации не прятали заголовок раздела под sticky-шапкой */
+section[id] { scroll-margin-top: 84px; }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+.stat-card .stat-num { font-family: var(--font-display); font-size: 30px; color: var(--text); line-height: 1; }
+.stat-card .stat-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-top: 8px; display: block; }
+
+@media (max-width: 900px) {
+  .side-nav { display: none; }
+  .main-content { padding: 20px 16px 60px; }
+  .topbar { padding: 12px 16px; flex-wrap: wrap; }
+}
+
+/* =========================================================
+   Страница входа
+   ========================================================= */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px 32px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+}
+.auth-head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; margin-bottom: 30px; }
+.auth-head .brand-name { font-size: 21px; }
+
+.error-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--danger-bg);
+  border: 1px solid var(--burgundy-deep);
+  color: var(--burgundy-bright);
+  font-size: 13px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 18px;
+}
+.error-banner svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.auth-foot { text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-faint); font-family: var(--font-mono); letter-spacing: 0.04em; }
+
+/* =========================================================
+   Страница 403
+   ========================================================= */
+
+.error-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.error-card {
+  max-width: 460px;
+  text-align: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 44px 38px;
+}
+.error-code {
+  font-family: var(--font-display);
+  font-size: 64px;
+  color: var(--burgundy-bright);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.error-card h1 { font-size: 19px; margin-bottom: 10px; }
+.error-card p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin: 0 0 26px; }
+
+/* =========================================================
+   Логи
+   ========================================================= */
+
+.logs-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
