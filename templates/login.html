@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход — SSH Subsystem Proxy</title>
+</head>
+<body>
+    <h2>Вход в панель управления</h2>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="POST">
+        <label>Логин: <input type="text" name="username"></label><br><br>
+        <label>Пароль: <input type="password" name="password"></label><br><br>
+        <button type="submit">Войти</button>
+    </form>
+</body>
+</html>

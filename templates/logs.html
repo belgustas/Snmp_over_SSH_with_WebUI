@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Журнал подключений — SSH Subsystem Proxy</title>
+</head>
+<body>
+    <h2>Журнал подключений</h2>
+    <a href="{{ url_for('dashboard') }}">Назад на дашборд</a>
+
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>Клиент IP</th>
+            <th>Сервер</th>
+            <th>Subsystem</th>
+            <th>Порт</th>
+            <th>Подключение</th>
+            <th>Отключение</th>
+        </tr>
+        {% for e in entries %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td>{{ e.client_ip }}</td>
+            <td>{{ e.server_name }}</td>
+            <td>{{ e.subsystem_name }}</td>
+            <td>{{ e.local_port }}</td>
+            <td>{{ e.connected_at }}</td>
+            <td>{{ e.disconnected_at or "ещё активна" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
