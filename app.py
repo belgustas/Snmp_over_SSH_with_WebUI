@@ -9,7 +9,7 @@ from bridge_manager import BridgeManager
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "ILoveCats"  # TODO: перенести в .env или переменные окружения!
+app.secret_key = "ILoveCats"
 
 # manager = глобальный экземпляр, который живёт всё время работы приложения
 # все SSH-туннели хранятся тут. Если он упадёт — все туннели потеряются.
