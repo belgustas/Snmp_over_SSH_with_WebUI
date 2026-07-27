@@ -25,8 +25,6 @@ if not server:
 else:
     print("Сервер уже существует, пропускаю.")
 
-
-
 # Группы
 admin_group = session.query(Group).filter_by(name="admin").first()
 if not admin_group:
@@ -54,7 +52,6 @@ if not admin_user:
 else:
     print("Пользователь admin уже существует, пропускаю.")
 
-
 # Разрешим самому admin обращаться с localhost к серверу T14
 existing_ip = session.query(ClientIP).filter_by(ip_address="127.0.0.1").first()
 if not existing_ip:
@@ -73,7 +70,6 @@ if not existing_ip:
     print("Право доступа добавлено.")
 else:
     print("IP уже существует, пропускаю.")
-
 
 # Настройки приложения — создаём ровно одну запись, если её ещё нет
 existing_settings = session.query(AppSettings).first()

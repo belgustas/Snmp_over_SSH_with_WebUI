@@ -6,8 +6,6 @@ Base = declarative_base()
 
 
 class SSHServer(Base):
-    # SSH-сервер (например, какой-то T14, роутер, коммутатор)
-    # На этом сервере вешаются subsystems (snmp, netconf, etc)
     __tablename__ = "ssh_servers"
 
     id = Column(Integer, primary_key=True)
@@ -120,7 +118,7 @@ class RequestLog(Base):
     disconnected_at = Column(DateTime, nullable=True)  # заполняется при отключении
 
 
-# ========== ИНИЦИАЛИЗАЦИЯ БД ==========
+# БД
 engine = create_engine("sqlite:///proxy.db")
 Base.metadata.create_all(engine)  # создаём таблицы, если их нет
 

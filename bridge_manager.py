@@ -18,10 +18,9 @@ import os
 import traceback  # добавь в начало файла, если ещё нет
 
 
-
 class BridgeManager:
     # Управляет всеми туннелями (мостами) между локальными портами и удалёнными серверами
-    
+
     def __init__(self):
         self.lock = threading.Lock()
         # self.bridges[local_port] = {rule, server_sock, sessions}
@@ -29,7 +28,7 @@ class BridgeManager:
         self.bridges = {}
         self._next_session_id = 1
 
-    # ========== ЗАПУСК/ОСТАНОВКА МОСТОВ ==========
+    # Запуск и остановка мостов
 
     def start_bridge(self, rule):
         # Запускаем мост: открываем локальный порт и ждём входящих подключений в отдельном потоке
@@ -66,10 +65,10 @@ class BridgeManager:
         # - Если в БД есть новый subsystem → запускаем мост
         # - Если мост есть в памяти, но его нет в БД → закрываем мост
         # Это позволяет апдейтить конфиг БД, вызвать reload_from_db() и не перезагружать приложение
-        
+
         session = Session()
         found_ports = set()
-        
+
         for server in session.query(SSHServer).all():
             for sub in server.subsystems:
                 found_ports.add(sub.local_port)
@@ -93,7 +92,7 @@ class BridgeManager:
             print(f"Subsystem для порта {port} больше нет в базе, останавливаю мост.")
             self.stop_bridge(port)
 
-    # ========== ПРИЁМ ПОДКЛЮЧЕНИЙ ==========
+    # Поиск подключений
 
     def _accept_loop(self, local_port):
         # Главный цикл для этого порта: слушаем входящие подключения в отдельном потоке
@@ -204,6 +203,7 @@ class BridgeManager:
         ssh_client.close()
         self._log_disconnect(log_id)
         print(f"[-] [{local_port}] session #{session_id} закрыта")
+
     @staticmethod
     def _forward(src, dst, direction, log_file=None):
         # Двусторонняя трубка: читаем из src (4KB за раз), пишем в dst
@@ -239,7 +239,7 @@ class BridgeManager:
         # Ищем в БД: этот IP есть в разрешённых для этого сервера?
         # Если да И пользователь не истёк → возвращаем его SSH-учётки
         # Если нет → None (отказ в доступе)
-        
+
         session = Session()
         rule = (
             session.query(ServerAccessRule)
@@ -319,7 +319,7 @@ class BridgeManager:
         settings = db.query(AppSettings).first()
         enabled = bool(settings and settings.logging_enabled)
         db.close()
-        
+
         if not enabled:
             return None, None
 

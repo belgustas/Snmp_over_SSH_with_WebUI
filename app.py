@@ -3,7 +3,7 @@ from flask import Flask, request, session, redirect, url_for, render_template, a
 from models import (
     Session as DbSession, SSHServer, Subsystem,
     Group, User, ClientIP, ServerAccessRule, RequestLog, AppSettings,
-)   
+)
 from auth_utils import check_password, hash_password
 from bridge_manager import BridgeManager
 from datetime import datetime
@@ -23,13 +23,14 @@ def forbidden(error):
     return render_template("403.html", username=session.get("username")), 403
 
 
-# ========== ПРОВЕРКА ДОСТУПА ==========
+# Проверка доступа
 def login_required(view_func):
     # Ловушка для тех, кто зашёл на защищённый роут без логина
     def wrapped(*args, **kwargs):
         if "username" not in session:
             return redirect(url_for("login"))
         return view_func(*args, **kwargs)
+
     wrapped.__name__ = view_func.__name__
     return wrapped
 
@@ -61,23 +62,25 @@ def logout():
     session.pop("role", None)
     return redirect(url_for("login"))
 
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
+
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
     # Главная страница: показываем все серверы, юзеров, текущие сессии и разрешаем админам создавать новые
     db = DbSession()
-    
+
     # Автоматически создаём AppSettings, если её нет — нужна минимально одна запись для конфига
     settings = db.query(AppSettings).first()
     if not settings:
         settings = AppSettings()
         db.add(settings)
         db.commit()
-    
+
     # Собираем "плоскую" таблицу серверов для JS-таблицы в шаблоне
     # (каждый subsystem = отдельная строка, чтобы было видно, какие порты открыты)
     servers_table = []
@@ -118,16 +121,19 @@ def admin_required(view_func):
         if session.get("role") != "admin":
             abort(403)  # "нет доступа" для операторов
         return view_func(*args, **kwargs)
+
     wrapped.__name__ = view_func.__name__
     return wrapped
 
-# ========== УПРАВЛЕНИЕ SSH-ТУННЕЛЯМИ ==========
+
+# Управление ssh туннелями
 @app.route("/reload", methods=["POST"])
 @admin_required
 def reload_bridges():
     # Admin нажал "Перезагрузить" — перечитываем БД и запускаем/останавливаем мосты
     manager.reload_from_db()
     return redirect(url_for("dashboard"))
+
 
 @app.route("/disconnect/<int:session_id>", methods=["POST"])
 @admin_required
@@ -136,7 +142,8 @@ def disconnect(session_id):
     manager.disconnect_session(session_id)
     return redirect(url_for("dashboard"))
 
-# ============= УПРАВЛЕНИЕ SSH-СЕРВЕРАМИ =============
+
+# Управление ssh серверами
 @app.route("/add_server", methods=["POST"])
 @admin_required
 def add_server():
@@ -157,6 +164,7 @@ def add_server():
     db.close()
     return redirect(url_for("dashboard"))
 
+
 @app.route("/add_subsystem", methods=["POST"])
 @admin_required
 def add_subsystem():
@@ -176,6 +184,7 @@ def add_subsystem():
     db.close()
     manager.reload_from_db()  # Запускаем новый мост
     return redirect(url_for("dashboard"))
+
 
 @app.route("/delete_subsystem/<int:sub_id>", methods=["POST"])
 @admin_required
@@ -206,7 +215,8 @@ def delete_server(server_id):
     db.close()
     return redirect(url_for("dashboard"))
 
-# ========== УПРАВЛЕНИЕ ЮЗЕРАМИ И ГРУППАМИ ==========
+
+# Управление пользователями и группами
 @app.route("/add_group", methods=["POST"])
 @admin_required
 def add_group():
@@ -254,7 +264,7 @@ def delete_user(user_id):
     return redirect(url_for("dashboard"))
 
 
-# ============= УПРАВЛЕНИЕ IP-АДРЕСАМИ И ДОСТУПОМ =============
+# Управление IP адресами и доступом
 @app.route("/add_client_ip", methods=["POST"])
 @admin_required
 def add_client_ip():
@@ -368,7 +378,6 @@ def logs():
     return html
 
 
-# ========== ЗАПУСК ==========
 if __name__ == "__main__":
     # При запуске: читаем порт из БД (если есть AppSettings), иначе 8080
     db = DbSession()
