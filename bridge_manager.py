@@ -166,8 +166,9 @@ class BridgeManager:
                 pass
             client_sock.close()
             return
+        logging_enabled = self._get_logging_enabled()
 
-        log_id = self._log_connect(client_ip, rule)
+        log_id = self._log_connect(client_ip, rule, logging_enabled)
 
         with self.lock:
             session_id = self._next_session_id
@@ -182,7 +183,7 @@ class BridgeManager:
                 "log_id": log_id,
             }
 
-        c2s_log, s2c_log = self._open_traffic_logs(session_id)
+        c2s_log, s2c_log = self._open_traffic_logs(log_id, logging_enabled)
 
         print(f"[+] [{local_port}] session #{session_id}: {client_ip} -> {rule['server_name']}:{rule['subsystem']}")
 
@@ -258,25 +259,38 @@ class BridgeManager:
         return result
 
     @staticmethod
-    def _log_connect(client_ip, rule):
+    def _get_logging_enabled():
+        """
+        Читает флаг logging_enabled из AppSettings РОВНО ОДИН РАЗ за подключение.
+        Раньше этот же запрос дублировался и в _log_connect(), и в
+        _open_traffic_logs() — двумя отдельными обращениями к БД в разные
+        моменты времени, из-за чего решение "логировать или нет" могло
+        отличаться для записи в БД и для файлов трафика одной и той же сессии.
+        """
+        db = Session()
+        settings = db.query(AppSettings).first()
+        enabled = bool(settings and settings.logging_enabled)
+        db.close()
+        return enabled
+
+    @staticmethod
+    def _log_connect(client_ip, rule, logging_enabled):
         """
         Логирует подключение клиента в БД (таблица RequestLog).
-        
+
         Действия:
-          1. Проверяем, включено ли логирование в AppSettings
+          1. Принимаем уже готовый флаг logging_enabled (см. _get_logging_enabled)
           2. Создаём запись RequestLog с временем подключения
-          3. Возвращаем ID записи (нужен для последующего _log_disconnect)
-        
+          3. Возвращаем ID записи (нужен для последующего _log_disconnect
+             и для имени файлов трафика)
+
         Возвращает:
           - ID записи (если логирование включено)
           - None (если логирование отключено)
         """
-        db = Session()
-        settings = db.query(AppSettings).first()
-        # Если логирование отключено, не создаём запись
-        if not settings or not settings.logging_enabled:
-            db.close()
+        if not logging_enabled:
             return None
+        db = Session()
         # Создаём запись о подключении
         entry = RequestLog(
             client_ip=client_ip,
@@ -303,31 +317,33 @@ class BridgeManager:
         db.close()
 
     @staticmethod
-    def _open_traffic_logs(session_id):
+    def _open_traffic_logs(log_id, logging_enabled):
         """
         Открывает два файла для логирования трафика (если логирование включено).
-        
+
+        Файлы называются по log_id — это ID записи в таблице RequestLog
+        (постоянный, никогда не повторяется, переживает перезапуск приложения).
+        Раньше файлы назывались по session_id, который живёт только в памяти
+        процесса и обнуляется до 1 при каждом перезапуске — из-за этого
+        трафик разных, не связанных друг с другом подключений мог дописываться
+        (режим "ab") в один и тот же файл.
+
         Файлы:
-          - logs/session_{session_id}_c2s.bin: трафик от клиента к серверу
-          - logs/session_{session_id}_s2c.bin: трафик от сервера к клиенту
-        
+          - logs/log_{log_id}_c2s.bin: трафик от клиента к серверу
+          - logs/log_{log_id}_s2c.bin: трафик от сервера к клиенту
+
         Возвращает:
           - (c2s_file, s2c_file) если логирование включено
-          - (None, None) если логирование отключено
+          - (None, None) если логирование отключено или log_id отсутствует
         """
-        db = Session()
-        settings = db.query(AppSettings).first()
-        enabled = bool(settings and settings.logging_enabled)
-        db.close()
-
-        if not enabled:
+        if not logging_enabled or log_id is None:
             return None, None
 
         # Создаём директорию logs, если её нет
         os.makedirs("logs", exist_ok=True)
         # Открываем файлы в режиме append-binary
-        c2s_file = open(f"logs/session_{session_id}_c2s.bin", "ab")
-        s2c_file = open(f"logs/session_{session_id}_s2c.bin", "ab")
+        c2s_file = open(f"logs/log_{log_id}_c2s.bin", "ab")
+        s2c_file = open(f"logs/log_{log_id}_s2c.bin", "ab")
         return c2s_file, s2c_file
 
     def list_sessions(self):
