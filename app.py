@@ -143,6 +143,7 @@ def disconnect(session_id):
     return redirect(url_for("dashboard"))
 
 
+# Управление ssh серверами
 @app.route("/add_server", methods=["POST"])
 @admin_required
 def add_server():
@@ -158,7 +159,6 @@ def add_server():
     existing = db.query(SSHServer).filter(
         (SSHServer.name == name) | ((SSHServer.host == host) & (SSHServer.port == port))
     ).first()
-
     if existing:
         db.close()
         flash(f"Сервер с именем «{name}» или адресом {host}:{port} уже существует.")
@@ -186,11 +186,26 @@ def add_subsystem():
     После добавления перезагружает мосты, чтобы запустить новый туннель.
     """
     db = DbSession()
-    sub = Subsystem(
-        name=request.form["name"],
-        local_port=int(request.form["local_port"]),
-        server_id=int(request.form["server_id"]),
-    )
+    name = request.form["name"].strip()
+    local_port = int(request.form["local_port"])
+    server_id = int(request.form["server_id"])
+
+    # Проверка 1: такой subsystem уже есть на этом сервере
+    dup_name = db.query(Subsystem).filter_by(name=name, server_id=server_id).first()
+    if dup_name:
+        db.close()
+        flash(f"Subsystem «{name}» уже добавлен на этом сервере.")
+        return redirect(url_for("dashboard"))
+
+    # Проверка 2: локальный порт уже занят другим subsystem (unique=True в модели,
+    # но проверяем заранее, чтобы не ловить IntegrityError и не падать с 500)
+    dup_port = db.query(Subsystem).filter_by(local_port=local_port).first()
+    if dup_port:
+        db.close()
+        flash(f"Локальный порт {local_port} уже занят subsystem «{dup_port.name}».")
+        return redirect(url_for("dashboard"))
+
+    sub = Subsystem(name=name, local_port=local_port, server_id=server_id)
     db.add(sub)
     db.commit()
     db.close()
