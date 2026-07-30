@@ -68,6 +68,14 @@
 
   <main class="main-content">
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="error-banner">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <div class="stats-row">
       <div class="stat-card">
         <span class="stat-num">{{ servers|length }}</span>

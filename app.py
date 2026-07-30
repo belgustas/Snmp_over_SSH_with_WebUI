@@ -1,5 +1,5 @@
 # Flask + модели данных + utils для управления SSH-туннелями через веб-интерфейс
-from flask import Flask, request, session, redirect, url_for, render_template, abort
+from flask import Flask, request, session, redirect, url_for, render_template, abort, flash
 from models import (
     Session as DbSession, SSHServer, Subsystem,
     Group, User, ClientIP, ServerAccessRule, RequestLog, AppSettings,
@@ -143,7 +143,6 @@ def disconnect(session_id):
     return redirect(url_for("dashboard"))
 
 
-# Управление ssh серверами
 @app.route("/add_server", methods=["POST"])
 @admin_required
 def add_server():
@@ -152,10 +151,23 @@ def add_server():
     Параметры из формы: name, host, port, proxy_username, proxy_password.
     """
     db = DbSession()
+    name = request.form["name"].strip()
+    host = request.form["host"].strip()
+    port = int(request.form["port"])
+
+    existing = db.query(SSHServer).filter(
+        (SSHServer.name == name) | ((SSHServer.host == host) & (SSHServer.port == port))
+    ).first()
+
+    if existing:
+        db.close()
+        flash(f"Сервер с именем «{name}» или адресом {host}:{port} уже существует.")
+        return redirect(url_for("dashboard"))
+
     server = SSHServer(
-        name=request.form["name"],
-        host=request.form["host"],
-        port=int(request.form["port"]),
+        name=name,
+        host=host,
+        port=port,
         proxy_username=request.form["proxy_username"],
         proxy_password=request.form["proxy_password"],
     )
