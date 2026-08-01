@@ -79,6 +79,7 @@ class BridgeManager:
                         "ssh_port": server.port,
                         "ssh_username": server.proxy_username,
                         "ssh_password": server.proxy_password,
+                        "ssh_key_path": server.proxy_key_path,
                         "subsystem": sub.name,
                         "server_id": server.id,
                         "server_name": server.name,
@@ -131,10 +132,10 @@ class BridgeManager:
             return
 
         # Если для этого IP заданы персональные SSH-учётки — используем их,
-        # иначе берём общие учётки сервера (proxy_username/proxy_password).
+        # иначе берём общие учётки сервера (proxy_username/proxy_password/proxy_key_path).
         ssh_username = access["ssh_username"] or rule["ssh_username"]
         ssh_password = access["ssh_password"] or rule["ssh_password"]
-        ssh_key_path = access["ssh_key_path"]
+        ssh_key_path = access["ssh_key_path"] or rule.get("ssh_key_path")
 
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())

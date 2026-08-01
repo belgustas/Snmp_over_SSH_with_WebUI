@@ -172,7 +172,8 @@
             <div class="field"><label>IP-адрес</label><input type="text" name="host" placeholder="10.87.151.206" required></div>
             <div class="field" style="max-width: 90px;"><label>Порт</label><input type="number" name="port" value="22" required></div>
             <div class="field"><label>Логин прокси</label><input type="text" name="proxy_username" placeholder="логин" required></div>
-            <div class="field"><label>Пароль прокси</label><input type="password" name="proxy_password" placeholder="пароль" required></div>
+            <div class="field"><label>Пароль прокси (если нет ключа)</label><input type="password" name="proxy_password" placeholder="пароль"></div>
+            <div class="field"><label>Путь к SSH-ключу (если нет пароля)</label><input type="text" name="proxy_key_path" placeholder="/home/user/.ssh/id_ed25519"></div>
             <button type="submit" class="btn btn-primary">Добавить</button>
           </div>
         </form>

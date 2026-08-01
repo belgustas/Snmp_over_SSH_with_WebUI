@@ -149,12 +149,21 @@ def disconnect(session_id):
 def add_server():
     """
     Добавляет новый SSH-сервер в БД с параметрами подключения.
-    Параметры из формы: name, host, port, proxy_username, proxy_password.
+    Параметры из формы: name, host, port, proxy_username,
+    proxy_password (опционально), proxy_key_path (опционально).
+    Должно быть задано хотя бы одно из двух: пароль или путь к ключу.
     """
     db = DbSession()
     name = request.form["name"].strip()
     host = request.form["host"].strip()
     port = int(request.form["port"])
+    proxy_password = request.form.get("proxy_password", "").strip()
+    proxy_key_path = request.form.get("proxy_key_path", "").strip() or None
+
+    if not proxy_password and not proxy_key_path:
+        db.close()
+        flash("Укажите пароль прокси или путь к SSH-ключу — нужен хотя бы один способ входа.")
+        return redirect(url_for("dashboard"))
 
     existing = db.query(SSHServer).filter(
         (SSHServer.name == name) | ((SSHServer.host == host) & (SSHServer.port == port))
@@ -169,7 +178,10 @@ def add_server():
         host=host,
         port=port,
         proxy_username=request.form["proxy_username"],
-        proxy_password=request.form["proxy_password"],
+        # "" вместо None — колонка в уже существующей БД создана как NOT NULL,
+        # и при подключении по ключу код всё равно проверяет ssh_key_path раньше пароля
+        proxy_password=proxy_password or "",
+        proxy_key_path=proxy_key_path,
     )
     db.add(server)
     db.commit()

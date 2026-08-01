@@ -13,7 +13,8 @@ class SSHServer(Base):
     host = Column(String, nullable=False)
     port = Column(Integer, default=22)
     proxy_username = Column(String, nullable=False)  # учётки прокси для подключения к серверу
-    proxy_password = Column(String, nullable=False)
+    proxy_password = Column(String, nullable=True)   # опционально, если используется ключ
+    proxy_key_path = Column(String, nullable=True)   # путь к приватному SSH-ключу (опционально)
 
     subsystems = relationship("Subsystem", back_populates="server")
     access_rules = relationship("ServerAccessRule", back_populates="server")
@@ -137,6 +138,13 @@ def migrate_existing_sqlite_schema():
             connection.execute(text("ALTER TABLE client_ips ADD COLUMN ssh_password VARCHAR"))
         if "ssh_key_path" not in existing_columns:
             connection.execute(text("ALTER TABLE client_ips ADD COLUMN ssh_key_path VARCHAR"))
+
+        existing_server_columns = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(ssh_servers)").fetchall()
+        }
+        if "proxy_key_path" not in existing_server_columns:
+            connection.execute(text("ALTER TABLE ssh_servers ADD COLUMN proxy_key_path VARCHAR"))
 
 
 migrate_existing_sqlite_schema()
