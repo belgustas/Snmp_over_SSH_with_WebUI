@@ -89,7 +89,7 @@ def dashboard():
             servers_table.append({
                 "server_name": server.name, "host": server.host, "port": server.port,
                 "subsystem": sub.name, "local_port": sub.local_port, "sub_id": sub.id,
-                "server_id": server.id,
+                "server_id": server.id, "exec_command": sub.exec_command,
             })
 
     # Собираем всех пользователей, группы, IP, правила для формочек на фронте
@@ -194,13 +194,24 @@ def add_server():
 def add_subsystem():
     """
     Добавляет новый subsystem (e.g., 'snmp', 'netconf') с локальным портом.
-    Параметры: name, local_port, server_id.
+    Параметры: name, local_port, server_id, exec_command (опционально).
+
+    Если exec_command не задан — работает обычный subsystem-режим:
+    имя (name) должно быть зарегистрировано в sshd_config на сервере.
+
+    Если exec_command задан — работает exec-режим: вместо invoke_subsystem
+    выполняется обычная команда (channel.exec_command), которая не требует
+    правки sshd_config. Нужно для устройств, где нет доступа к конфигу sshd
+    (например, встраиваемые Linux-прошивки с закрытой файловой системой).
+    В этом случае name — просто удобное отображаемое имя для дашборда/логов.
+
     После добавления перезагружает мосты, чтобы запустить новый туннель.
     """
     db = DbSession()
     name = request.form["name"].strip()
     local_port = int(request.form["local_port"])
     server_id = int(request.form["server_id"])
+    exec_command = request.form.get("exec_command", "").strip() or None
 
     # Проверка 1: такой subsystem уже есть на этом сервере
     dup_name = db.query(Subsystem).filter_by(name=name, server_id=server_id).first()
@@ -217,7 +228,7 @@ def add_subsystem():
         flash(f"Локальный порт {local_port} уже занят subsystem «{dup_port.name}».")
         return redirect(url_for("dashboard"))
 
-    sub = Subsystem(name=name, local_port=local_port, server_id=server_id)
+    sub = Subsystem(name=name, local_port=local_port, server_id=server_id, exec_command=exec_command)
     db.add(sub)
     db.commit()
     db.close()

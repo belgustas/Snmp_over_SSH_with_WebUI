@@ -81,6 +81,7 @@ class BridgeManager:
                         "ssh_password": server.proxy_password,
                         "ssh_key_path": server.proxy_key_path,
                         "subsystem": sub.name,
+                        "exec_command": sub.exec_command,
                         "server_id": server.id,
                         "server_name": server.name,
                     }
@@ -157,7 +158,13 @@ class BridgeManager:
             ssh_client.connect(**connect_kwargs)
             transport = ssh_client.get_transport()
             channel = transport.open_session()
-            channel.invoke_subsystem(rule["subsystem"])
+            if rule.get("exec_command"):
+                # Exec-режим: обычное выполнение команды на сервере, без subsystem.
+                # Не требует регистрации в sshd_config — работает на любом sshd "из коробки".
+                channel.exec_command(rule["exec_command"])
+            else:
+                # Subsystem-режим (как раньше): имя должно быть зарегистрировано в sshd_config
+                channel.invoke_subsystem(rule["subsystem"])
         except Exception:
             print(f"[!] [{local_port}] Не удалось установить SSH/subsystem для {client_ip}:")
             traceback.print_exc()

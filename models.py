@@ -23,12 +23,20 @@ class SSHServer(Base):
 class Subsystem(Base):
     # Subsystem на сервере (snmp, netconf, etc) + какой локальный порт его открыть
     # Пример: localhost:9999 открывает snmp на T14
+    #
+    # Два режима работы моста:
+    #  - subsystem-режим (стандартный SSH subsystem, invoke_subsystem):
+    #    exec_command пустой, используется name как имя subsystem из sshd_config
+    #  - exec-режим (обычное выполнение команды, exec_command()):
+    #    exec_command задан — не требует регистрации в sshd_config вообще,
+    #    нужен только для устройств, где нет доступа к правке конфига sshd
     __tablename__ = "subsystems"
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     local_port = Column(Integer, nullable=False, unique=True)  # юникально, не может быть две подсистемы на одном порту
     server_id = Column(Integer, ForeignKey("ssh_servers.id"), nullable=False)
+    exec_command = Column(String, nullable=True)  # если задано — exec-режим вместо subsystem-режима
 
     server = relationship("SSHServer", back_populates="subsystems")
 
@@ -145,6 +153,13 @@ def migrate_existing_sqlite_schema():
         }
         if "proxy_key_path" not in existing_server_columns:
             connection.execute(text("ALTER TABLE ssh_servers ADD COLUMN proxy_key_path VARCHAR"))
+
+        existing_subsystem_columns = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(subsystems)").fetchall()
+        }
+        if "exec_command" not in existing_subsystem_columns:
+            connection.execute(text("ALTER TABLE subsystems ADD COLUMN exec_command VARCHAR"))
 
 
 migrate_existing_sqlite_schema()

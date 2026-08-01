@@ -109,7 +109,7 @@
         <table class="data">
           <thead>
             <tr>
-              <th>Сервер</th><th>Адрес</th><th>Subsystem</th><th>Локальный порт</th>
+              <th>Сервер</th><th>Адрес</th><th>Subsystem</th><th>Режим</th><th>Локальный порт</th>
               {% if is_admin %}<th></th>{% endif %}
             </tr>
           </thead>
@@ -119,6 +119,13 @@
               <td>{{ row.server_name }}</td>
               <td class="mono">{{ row.host }}:{{ row.port }}</td>
               <td>{{ row.subsystem }}</td>
+              <td>
+                {% if row.exec_command %}
+                  <span class="badge badge-muted" title="{{ row.exec_command }}">exec</span>
+                {% else %}
+                  <span class="badge badge-success">subsystem</span>
+                {% endif %}
+              </td>
               <td class="mono">{{ row.local_port }}</td>
               {% if is_admin %}
               <td>
@@ -134,7 +141,7 @@
               {% endif %}
             </tr>
             {% else %}
-            <tr class="empty-row"><td colspan="5">Серверы ещё не добавлены</td></tr>
+            <tr class="empty-row"><td colspan="6">Серверы ещё не добавлены</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -158,6 +165,10 @@
             <div class="field">
               <label>Локальный порт</label>
               <input type="number" name="local_port" placeholder="15003" required>
+            </div>
+            <div class="field">
+              <label>Команда (exec-режим, необязательно)</label>
+              <input type="text" name="exec_command" placeholder="оставьте пустым для обычного subsystem">
             </div>
             <button type="submit" class="btn btn-primary">Добавить</button>
           </div>
